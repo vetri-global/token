@@ -1,0 +1,7 @@
+# vim swap files
+*.swp
+*.swo
+
+node_modules/
+build/
+
