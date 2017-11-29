@@ -1,18 +1,32 @@
 pragma solidity ^0.4.18;
 
 /**
- * @title VALID Token
- * @dev ERC20 compatible smart contract for the Valid token.
+ * @title ERC20 Token Interface
  */
+contract ERC20 {
+    function totalSupply() view returns (uint totalSupply);
+    function balanceOf(address _owner) view returns (uint balance);
+    function transfer(address _to, uint _value) returns (bool success);
+    function transferFrom(address _from, address _to, uint _value) returns (bool success);
+    function approve(address _spender, uint _value) returns (bool success);
+    function allowance(address _owner, address _spender) view returns (uint remaining);
+    event Transfer(address indexed _from, address indexed _to, uint _value);
+    event Approval(address indexed _owner, address indexed _spender, uint _value);
+}
 
-contract ValidToken {
+/**
+ * @title VALID Token
+ * @dev ERC20 compatible smart contract for the VALID token.
+ */
+contract ValidToken is ERC20 {
     // token metadata
     string public constant name = "VALID";
     string public constant symbol = "VLD";
     uint8 public constant decimals = 18;
 
-    /// total amount of issued tokens
-    uint256 constant _totalSupply = 10**6;
+    // maximum amount of tokens
+    uint256 constant _totalSupply = 10**9 * 10**decimals;
+    // note: this equals 10**27, which is smaller than uint256 max value (~10**77)
 
     address public owner;
 
@@ -20,12 +34,8 @@ contract ValidToken {
     mapping(address => uint256) balances;
     mapping(address => mapping(address => uint256)) allowed;
 
-    // ERC20 events
-    event Transfer(address indexed _from, address indexed _to, uint256 _value);
-    event Approval(address indexed _owner, address indexed _spender, uint256 _value);
-
+    // constructor
     function ValidToken() {
-        // constructor
         owner = msg.sender;
         balances[msg.sender] = _totalSupply; // TODO
     }
