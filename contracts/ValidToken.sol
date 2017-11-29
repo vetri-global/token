@@ -1,6 +1,5 @@
 pragma solidity ^0.4.18;
 
-
 /**
  * @title VALID Token
  * @dev ERC20 compatible smart contract for the Valid token.
@@ -11,7 +10,6 @@ contract ValidToken {
     string public constant name = "VALID";
     string public constant symbol = "VLD";
     uint8 public constant decimals = 18;
-    string public constant version = "0.1";
 
     /// total amount of issued tokens
     uint256 constant _totalSupply = 10**6;
@@ -34,11 +32,11 @@ contract ValidToken {
 
     // ERC20 functionality
 
-    function totalSupply() constant returns (uint256 totalSupply) {
+    function totalSupply() view returns (uint256 totalSupply) {
         return _totalSupply;
     }
 
-    function balanceOf(address _owner) constant returns (uint256 balance) {
+    function balanceOf(address _owner) view returns (uint256 balance) {
         balance = balances[_owner];
     }
 
@@ -78,7 +76,7 @@ contract ValidToken {
         return true;
     }
 
-    function allowance(address _owner, address _spender) constant returns (uint256 remaining) {
+    function allowance(address _owner, address _spender) view returns (uint256 remaining) {
         return allowed[_owner][_spender];
     }
 }
