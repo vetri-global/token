@@ -1,5 +1,6 @@
 pragma solidity ^0.4.18;
 
+
 /**
  * @title ERC20 Token Interface
  */
@@ -14,9 +15,11 @@ contract ERC20 {
     event Approval(address indexed _owner, address indexed _spender, uint _value);
 }
 
+
 /**
  * @title VALID Token
- * @dev ERC20 compatible smart contract for the VALID token.
+ * @dev ERC20 compatible smart contract for the VALID token. Closely follows
+ *      ConsenSys StandardToken.
  */
 contract ValidToken is ERC20 {
     // token metadata
@@ -28,7 +31,12 @@ contract ValidToken is ERC20 {
     uint256 constant _totalSupply = 10**9 * 10**uint256(decimals);
     // note: this equals 10**27, which is smaller than uint256 max value (~10**77)
 
+    // ownership
     address public owner;
+    modifier onlyOwner() {
+        require(msg.sender == owner);
+        _;
+    }
 
     // token accounting
     mapping(address => uint256) balances;
@@ -38,6 +46,14 @@ contract ValidToken is ERC20 {
     function ValidToken() public {
         owner = msg.sender;
         balances[msg.sender] = _totalSupply; // TODO
+    }
+
+    /**
+     * @dev Allows the current owner to transfer the ownership.
+     * @param newOwner The address to transfer ownership to.
+     */
+    function transferOwnership(address newOwner) public onlyOwner {
+        owner = newOwner;
     }
 
     // ERC20 functionality
@@ -86,4 +102,5 @@ contract ValidToken is ERC20 {
     function allowance(address _owner, address _spender) public view returns (uint256) {
         return allowed[_owner][_spender];
     }
+
 }
