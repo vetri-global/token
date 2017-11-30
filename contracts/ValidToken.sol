@@ -75,10 +75,7 @@ contract ValidToken is ERC20 {
     }
 
     function approve(address _spender, uint256 _value) public returns (bool) {
-        // require the approved amount to be set to zero before allowing to
-        // change it, this is a required step to mitigate a race condition (see
-        // https://github.com/ethereum/EIPs/issues/20#issuecomment-263524729)
-        require(_value == 0 || allowed[msg.sender][_spender] == 0);
+        // no check for zero allowance, see NOTES.md
 
         allowed[msg.sender][_spender] = _value;
 
