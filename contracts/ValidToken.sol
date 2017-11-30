@@ -27,9 +27,14 @@ contract ValidToken is ERC20 {
     string public constant symbol = "VLD";
     uint8 public constant decimals = 18;
 
-    // maximum amount of tokens
-    uint256 constant _totalSupply = 10**9 * 10**uint256(decimals);
+    // total supply and maximum amount of tokens
+    uint256 _totalSupply = 0;
+    uint256 constant maxSupply = 10**9 * 10**uint256(decimals);
     // note: this equals 10**27, which is smaller than uint256 max value (~10**77)
+
+    // token accounting
+    mapping(address => uint256) balances;
+    mapping(address => mapping(address => uint256)) allowed;
 
     // ownership
     address public owner;
@@ -38,9 +43,12 @@ contract ValidToken is ERC20 {
         _;
     }
 
-    // token accounting
-    mapping(address => uint256) balances;
-    mapping(address => mapping(address => uint256)) allowed;
+    // minting
+    bool public mintingDone = false;
+    modifier mintingFinished() {
+        require(mintingDone == true);
+        _;
+    }
 
     // constructor
     function ValidToken() public {
@@ -52,8 +60,40 @@ contract ValidToken is ERC20 {
      * @dev Allows the current owner to transfer the ownership.
      * @param newOwner The address to transfer ownership to.
      */
-    function transferOwnership(address newOwner) public onlyOwner {
-        owner = newOwner;
+    function transferOwnership(address _newOwner) public onlyOwner {
+        owner = _newOwner;
+    }
+
+    // minting functionality
+
+    function mint(address[] _recipients, uint256[] _amounts) public onlyOwner {
+        require(mintingDone == false);
+
+        require(_recipients.length == _amounts.length);
+        require(_recipients.length < 256);
+
+        for (uint8 i = 0; i < _recipients.length; i++) {
+            address recipient = _recipients[i];
+            uint256 amount = _amounts[i];
+
+            // enforce maximum token supply
+            require(_totalSupply + amount >= _totalSupply);
+            require(_totalSupply + amount <= maxSupply);
+
+            balances[recipient] += amount;
+            totalSupply += amount;
+
+            Transfer(msg.sender, recipient, amount);
+        }
+    }
+
+    function finishMinting() public onlyOwner {
+        require(mintingDone == false);
+
+        // check hard cap again
+        require(_totalSupply <= maxSupply);
+
+        mintingDone = true;
     }
 
     // ERC20 functionality
@@ -66,7 +106,7 @@ contract ValidToken is ERC20 {
         return balances[_owner];
     }
 
-    function transfer(address _to, uint256 _value) public returns (bool) {
+    function transfer(address _to, uint256 _value) public mintingFinished returns (bool) {
         require(balances[msg.sender] >= _value);
         require(balances[_to] + _value >= balances[_to]); // receiver balance overflow check
 
@@ -77,7 +117,7 @@ contract ValidToken is ERC20 {
         return true;
     }
 
-    function transferFrom(address _from, address _to, uint256 _value) public returns (bool) {
+    function transferFrom(address _from, address _to, uint256 _value) public mintingFinished returns (bool) {
         uint256 allowance = allowed[_from][msg.sender];
         require(balances[_from] >= _value && allowance >= _value);
         require(balances[_to] + _value >= balances[_to]); // receiver balance overflow check
@@ -102,5 +142,4 @@ contract ValidToken is ERC20 {
     function allowance(address _owner, address _spender) public view returns (uint256) {
         return allowed[_owner][_spender];
     }
-
 }
