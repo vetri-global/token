@@ -334,7 +334,7 @@ contract('ValidToken', function (accounts) {
 
     it('events: should fail on minting max tokens', function () {
         return ValidToken.deployed().then(function (instance) {
-            return utils.testMint(contract, accounts, (new web3.BigNumber(10)).pow(28), 0, 0);
+            return utils.testMint(contract, accounts, (new web3.BigNumber(10)).pow(27).add(1), 0, 0);
         }).then(function (result) {
             assert(false, 'The preceding call should have thrown an error.')
         }).catch((err) => {
