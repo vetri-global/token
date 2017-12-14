@@ -51,7 +51,6 @@ contract ValidToken is ERC20 {
     // constructor
     function ValidToken() public {
         owner = msg.sender;
-        balances[msg.sender] = totalSupply; // TODO
     }
 
     /**
