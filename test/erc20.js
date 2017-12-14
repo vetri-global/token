@@ -1,26 +1,23 @@
 //based on https://github.com/ConsenSys/Tokens/tree/master/test
 
-var SovereignCoin = artifacts.require('./SovereignCoin.sol')
+var ValidToken = artifacts.require('./ValidToken.sol')
 var utils = {
     testMint(contract, accounts, account0, account1, account2) {
-        return contract.setTotalGoldSupply(account0)
+        return contract.mint([accounts[0]], [account0])
             .then(function () {
-                return contract.mint(accounts[0], account0)
-            }).then(function () {
-                return contract.setIsTokenTransferLocked(false)
-            }).then(function () {
-                return contract.setFeeReceiver(accounts[4]);
-            }).catch((err) => { throw new Error(err) });
+                return contract.finishMinting()
+            }).catch((err) => {
+            throw new Error(err) });
     }
 }
 
 
-contract('SovereignCoin', function (accounts) {
+contract('ValidToken', function (accounts) {
 
     //https://ethereum.stackexchange.com/questions/15567/truffle-smart-contract-testing-does-not-reset-state/15574#15574
     var contract;
     beforeEach(function () {
-        return SovereignCoin.new()
+        return ValidToken.new()
             .then(function (instance) {
                 contract = instance;
             });
@@ -30,12 +27,15 @@ contract('SovereignCoin', function (accounts) {
         if (err.toString().includes('Error: VM Exception while processing transaction: revert')) {
             return true
         }
+        if (err.toString().includes('invalid opcode')) {
+            return true
+        }
         return false
     }
 
     //************************** TEST ERC20 - the smart contract code is copy&paste from reliable sources ************
     it("test ERC20 basic functionality", function () {
-        return SovereignCoin.deployed().then(function (instance) {
+        return ValidToken.deployed().then(function (instance) {
             return utils.testMint(contract, accounts, 1000, 0, 0);
         }).then(function (retVal) {
             return contract.transfer(accounts[1], 1, {from: accounts[0]});
@@ -63,18 +63,15 @@ contract('SovereignCoin', function (accounts) {
             //transfer was successful
             return contract.balanceOf.call(accounts[0], {from: accounts[0]});
         }).then(function (balance) {
-            assert.equal(balance.valueOf(), 999, "we sent from account 0 to account 0, so account 0 has 999 tokens, one is fee");
-            return contract.balanceOf.call(accounts[4], {from: accounts[0]});
-        }).then(function (balance) {
-            assert.equal(balance.valueOf(), 1, "we sent from account 0 to account 0, so account 4 has 1 tokens, one is fee");
-            return contract.transfer(accounts[1], 999, {from: accounts[0]});
+            assert.equal(balance.valueOf(), 1000, "we sent from account 0 to account 0, so account 0 has 1000 tokens");
+            return contract.transfer(accounts[1], 1000, {from: accounts[0]});
         }).then(function (retVal) {
             return contract.balanceOf.call(accounts[0], {from: accounts[1]});
         }).then(function (balance) {
             assert.equal(balance.valueOf(), 0, "we transfer all tokens to account 1");
             return contract.balanceOf.call(accounts[1], {from: accounts[2]});
         }).then(function (balance) {
-            assert.equal(balance.valueOf(), 999, "account 1 has 1000 tokenscd ");
+            assert.equal(balance.valueOf(), 1000, "account 1 has 1000 tokenscd ");
         }).catch((err) => {
             throw new Error(err)
         })
@@ -84,7 +81,7 @@ contract('SovereignCoin', function (accounts) {
 // CREATION
 
     it('creation: should create an initial balance of 0 for everyone', function () {
-        SovereignCoin.new({from: accounts[0]}).then(function (ctr) {
+        ValidToken.new({from: accounts[0]}).then(function (ctr) {
             return ctr.balanceOf.call(accounts[0])
         }).then(function (result) {
             assert.strictEqual(result.toNumber(), 0)
@@ -101,7 +98,7 @@ contract('SovereignCoin', function (accounts) {
     // it's not giving estimate on gas used in the event of an error.
     it('transfers: ether transfer should be reversed.', function () {
         var ctr
-        return SovereignCoin.new({from: accounts[0]}).then(function (result) {
+        return ValidToken.new({from: accounts[0]}).then(function (result) {
             ctr = result
             return web3.eth.sendTransaction({from: accounts[0], to: ctr.address, value: web3.toWei('10', 'Ether')})
         }).catch(function (result) {
@@ -112,35 +109,21 @@ contract('SovereignCoin', function (accounts) {
     })
 
     it('transfers: should transfer 10000 to accounts[1] with accounts[0] having 10000', function () {
-        return SovereignCoin.deployed().then(function (instance) {
+        return ValidToken.deployed().then(function (instance) {
             return utils.testMint(contract, accounts, 10000, 0, 0);
         }).then(function (result) {
             return contract.transfer(accounts[1], 10000, {from: accounts[0]})
         }).then(function (result) {
             return contract.balanceOf.call(accounts[1])
         }).then(function (result) {
-            assert.strictEqual(result.toNumber(), 9990)
-        }).catch((err) => {
-            throw new Error(err)
-        })
-    })
-
-    it('transfers: should transfer 999 to accounts[1] with accounts[0] having 999, no fees paied', function () {
-        return SovereignCoin.deployed().then(function (instance) {
-            return utils.testMint(contract, accounts, 10000, 0, 0);
-        }).then(function (result) {
-            return contract.transfer(accounts[1], 999, {from: accounts[0]})
-        }).then(function (result) {
-            return contract.balanceOf.call(accounts[1])
-        }).then(function (result) {
-            assert.strictEqual(result.toNumber(), 999)
+            assert.strictEqual(result.toNumber(), 10000)
         }).catch((err) => {
             throw new Error(err)
         })
     })
 
     it('transfers: should fail when trying to transfer 10001 to accounts[1] with accounts[0] having 10000', function () {
-        return SovereignCoin.deployed().then(function (instance) {
+        return ValidToken.deployed().then(function (instance) {
             return utils.testMint(contract, accounts, 10000, 0, 0);
         }).then(function (result) {
             return contract.transfer.call(accounts[1], 10001, {from: accounts[0]})
@@ -153,7 +136,7 @@ contract('SovereignCoin', function (accounts) {
     })
 
     it('transfers: should fail on zero-transfers', function () {
-        return SovereignCoin.deployed().then(function (instance) {
+        return ValidToken.deployed().then(function (instance) {
             return utils.testMint(contract, accounts, 10000, 0, 0);
         }).then(function (result) {
             return contract.transfer.call(accounts[1], 0, {from: accounts[0]})
@@ -170,7 +153,7 @@ contract('SovereignCoin', function (accounts) {
 // APPROVALS
 
     it('approvals: msg.sender should approve 100 to accounts[1]', function () {
-        return SovereignCoin.deployed().then(function (instance) {
+        return ValidToken.deployed().then(function (instance) {
             return utils.testMint(contract, accounts, 10000, 0, 0);
         }).then(function (result) {
             return contract.approve(accounts[1], 100, {from: accounts[0]})
@@ -185,7 +168,7 @@ contract('SovereignCoin', function (accounts) {
 
     // bit overkill. But is for testing a bug
     it('approvals: msg.sender approves accounts[1] of 100 & withdraws 20 once.', function () {
-        return SovereignCoin.deployed().then(function (instance) {
+        return ValidToken.deployed().then(function (instance) {
             return utils.testMint(contract, accounts, 10000, 0, 0);
         }).then(function (result) {
             return contract.balanceOf.call(accounts[0])
@@ -219,7 +202,7 @@ contract('SovereignCoin', function (accounts) {
 
     // should approve 100 of msg.sender & withdraw 50, twice. (should succeed)
     it('approvals: msg.sender approves accounts[1] of 100 & withdraws 20 twice.', function () {
-        return SovereignCoin.deployed().then(function (instance) {
+        return ValidToken.deployed().then(function (instance) {
             return utils.testMint(contract, accounts, 10000, 0, 0);
         }).then(function (result) {
             return contract.approve(accounts[1], 100, {from: accounts[0]})
@@ -258,7 +241,7 @@ contract('SovereignCoin', function (accounts) {
 
     // should approve 100 of msg.sender & withdraw 50 & 60 (should fail).
     it('approvals: msg.sender approves accounts[1] of 100 & withdraws 50 & 60 (2nd tx should fail)', function () {
-        return SovereignCoin.deployed().then(function (instance) {
+        return ValidToken.deployed().then(function (instance) {
             return utils.testMint(contract, accounts, 10000, 0, 0);
         }).then(function (result) {
             return contract.approve(accounts[1], 100, {from: accounts[0]})
@@ -289,7 +272,7 @@ contract('SovereignCoin', function (accounts) {
     })
 
     it('approvals: attempt withdrawal from acconut with no allowance (should fail)', function () {
-        return SovereignCoin.deployed().then(function (instance) {
+        return ValidToken.deployed().then(function (instance) {
             return utils.testMint(contract, accounts, 10000, 0, 0);
         }).then(function (result) {
             return contract.transferFrom.call(accounts[0], accounts[2], 60, {from: accounts[1]})
@@ -302,7 +285,7 @@ contract('SovereignCoin', function (accounts) {
     })
 
     it('approvals: allow accounts[1] 100 to withdraw from accounts[0]. Withdraw 60 and then approve 0 & attempt transfer.', function () {
-        return SovereignCoin.deployed().then(function (instance) {
+        return ValidToken.deployed().then(function (instance) {
             return utils.testMint(contract, accounts, 10000, 0, 0);
         }).then(function (result) {
             return contract.approve(accounts[1], 100, {from: accounts[0]})
@@ -321,7 +304,7 @@ contract('SovereignCoin', function (accounts) {
     })
 
     it('approvals: approve max (2^256 - 1)', function () {
-        return SovereignCoin.deployed().then(function (instance) {
+        return ValidToken.deployed().then(function (instance) {
             return utils.testMint(contract, accounts, 10000, 0, 0);
         }).then(function (result) {
             return contract.approve(accounts[1], '115792089237316195423570985008687907853269984665640564039457584007913129639935', {from: accounts[0]})
@@ -336,27 +319,22 @@ contract('SovereignCoin', function (accounts) {
     })
 
     it('events: should fire Transfer event properly', function () {
-        return SovereignCoin.deployed().then(function (instance) {
+        return ValidToken.deployed().then(function (instance) {
             return utils.testMint(contract, accounts, 10000, 0, 0);
         }).then(function (result) {
             return contract.transfer(accounts[1], '2666', {from: accounts[0]})
         }).then(function (result) {
             assert.strictEqual(result.logs[0].args._from, accounts[0])
-            assert.strictEqual(result.logs[0].args._to, accounts[4])
-            assert.strictEqual(result.logs[0].args._value.toString(), '2')
-            assert.strictEqual(result.logs[1].args._from, accounts[0])
-            assert.strictEqual(result.logs[1].args._to, accounts[1])
-            assert.strictEqual(result.logs[1].args._value.toString(), '2664')
+            assert.strictEqual(result.logs[0].args._to, accounts[1])
+            assert.strictEqual(result.logs[0].args._value.toString(), '2666')
         }).catch((err) => {
             throw new Error(err)
         })
     })
 
-    it('events: should fail on a zero transfer', function () {
-        return SovereignCoin.deployed().then(function (instance) {
-            return utils.testMint(contract, accounts, 10000, 0, 0);
-        }).then(function (result) {
-            return contract.transfer(accounts[1], '0', {from: accounts[0]})
+    it('events: should fail on minting max tokens', function () {
+        return ValidToken.deployed().then(function (instance) {
+            return utils.testMint(contract, accounts, (10**28), 0, 0);
         }).then(function (result) {
             assert(false, 'The preceding call should have thrown an error.')
         }).catch((err) => {
@@ -364,9 +342,19 @@ contract('SovereignCoin', function (accounts) {
                 'throw the expected error:' + err)
         })
     })
+    it('events: should not fail on minting max tokens', function () {
+        return ValidToken.deployed().then(function (instance) {
+            return utils.testMint(contract, accounts, (10**27), 0, 0);
+        }).then(function (result) {
+            assert(true, 'The preceding call should not have thrown an error.')
+        }).catch((err) => {
+            assert(evmThrewRevertError(err), 'the EVM did not throw an error or did not ' +
+                'throw the expected error:' + err)
+        })
+    })
 
     it('events: should fire Approval event properly', function () {
-        return SovereignCoin.deployed().then(function (instance) {
+        return ValidToken.deployed().then(function (instance) {
             return utils.testMint(contract, accounts, 10000, 0, 0);
         }).then(function (result) {
             return contract.approve(accounts[1], '2666', {from: accounts[0]})
@@ -383,7 +371,7 @@ contract('SovereignCoin', function (accounts) {
     })
 
     it('events: should fire transferFrom event properly', function () {
-        return SovereignCoin.deployed().then(function (instance) {
+        return ValidToken.deployed().then(function (instance) {
             return utils.testMint(contract, accounts, 10000, 0, 0);
         }).then(function (result) {
             return contract.approve(accounts[1], '2666', {from: accounts[0]})
@@ -391,12 +379,8 @@ contract('SovereignCoin', function (accounts) {
             return contract.transferFrom(accounts[0], accounts[2], '2666', {from: accounts[1]})
         }).then(function (result) {
             assert.strictEqual(result.logs[0].args._from, accounts[0])
-            assert.strictEqual(result.logs[0].args._to, accounts[4])
-            assert.strictEqual(result.logs[0].args._value.toString(), '2')
-            //from needs to be from account[0], see v.1.0.1
-            assert.strictEqual(result.logs[1].args._from, accounts[0])
-            assert.strictEqual(result.logs[1].args._to, accounts[2])
-            assert.strictEqual(result.logs[1].args._value.toString(), '2664')
+            assert.strictEqual(result.logs[0].args._to, accounts[2])
+            assert.strictEqual(result.logs[0].args._value.toString(), '2666')
         }).catch((err) => {
             throw new Error(err)
         })

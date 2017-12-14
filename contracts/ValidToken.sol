@@ -5,8 +5,7 @@ pragma solidity ^0.4.18;
  * @title ERC20 Token Interface
  */
 contract ERC20 {
-    function totalSupply() public view returns (uint _totalSupply);
-    function balanceOf(address _owner) public view returns (uint balance);
+    uint256 public totalSupply;
     function transfer(address _to, uint _value) public returns (bool success);
     function transferFrom(address _from, address _to, uint _value) public returns (bool success);
     function approve(address _spender, uint _value) public returns (bool success);
@@ -28,7 +27,6 @@ contract ValidToken is ERC20 {
     uint8 public constant decimals = 18;
 
     // total supply and maximum amount of tokens
-    uint256 _totalSupply = 0;
     uint256 constant maxSupply = 10**9 * 10**uint256(decimals);
     // note: this equals 10**27, which is smaller than uint256 max value (~10**77)
 
@@ -53,11 +51,12 @@ contract ValidToken is ERC20 {
     // constructor
     function ValidToken() public {
         owner = msg.sender;
+        balances[msg.sender] = totalSupply; // TODO
     }
 
     /**
      * @dev Allows the current owner to transfer the ownership.
-     * @param newOwner The address to transfer ownership to.
+     * @param _newOwner The address to transfer ownership to.
      */
     function transferOwnership(address _newOwner) public onlyOwner {
         owner = _newOwner;
@@ -76,8 +75,8 @@ contract ValidToken is ERC20 {
             uint256 amount = _amounts[i];
 
             // enforce maximum token supply
-            require(_totalSupply + amount >= _totalSupply);
-            require(_totalSupply + amount <= maxSupply);
+            require(totalSupply + amount >= totalSupply);
+            require(totalSupply + amount <= maxSupply);
 
             balances[recipient] += amount;
             totalSupply += amount;
@@ -90,16 +89,12 @@ contract ValidToken is ERC20 {
         require(mintingDone == false);
 
         // check hard cap again
-        require(_totalSupply <= maxSupply);
+        require(totalSupply <= maxSupply);
 
         mintingDone = true;
     }
 
     // ERC20 functionality
-
-    function totalSupply() public view returns (uint256) {
-        return _totalSupply;
-    }
 
     function balanceOf(address _owner) public view returns (uint256) {
         return balances[_owner];
