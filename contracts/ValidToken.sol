@@ -5,8 +5,7 @@ pragma solidity ^0.4.18;
  * @title ERC20 Token Interface
  */
 contract ERC20 {
-    function totalSupply() public view returns (uint _totalSupply);
-    function balanceOf(address _owner) public view returns (uint balance);
+    uint256 public totalSupply;
     function transfer(address _to, uint _value) public returns (bool success);
     function transferFrom(address _from, address _to, uint _value) public returns (bool success);
     function approve(address _spender, uint _value) public returns (bool success);
@@ -28,7 +27,6 @@ contract ValidToken is ERC20 {
     uint8 public constant decimals = 18;
 
     // total supply and maximum amount of tokens
-    uint256 public totalSupply = 0;
     uint256 constant maxSupply = 10**9 * 10**uint256(decimals);
     // note: this equals 10**27, which is smaller than uint256 max value (~10**77)
 
