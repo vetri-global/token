@@ -67,7 +67,7 @@ contract ValidToken is ERC20 {
         require(mintingDone == false);
 
         require(_recipients.length == _amounts.length);
-        require(_recipients.length < 256);
+        require(_recipients.length < 255);
 
         for (uint8 i = 0; i < _recipients.length; i++) {
             address recipient = _recipients[i];
