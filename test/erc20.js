@@ -135,19 +135,6 @@ contract('ValidToken', function (accounts) {
         })
     })
 
-    it('transfers: should fail on zero-transfers', function () {
-        return ValidToken.deployed().then(function (instance) {
-            return utils.testMint(contract, accounts, 10000, 0, 0);
-        }).then(function (result) {
-            return contract.transfer.call(accounts[1], 0, {from: accounts[0]})
-        }).then(function (result) {
-            assert(false, 'The preceding call should have thrown an error.')
-        }).catch((err) => {
-            assert(evmThrewRevertError(err), 'the EVM did not throw an error or did not ' +
-                'throw the expected error')
-        })
-    })
-
     // NOTE: testing uint256 wrapping is impossible in this standard token since you can't supply > 2^256 -1.
 
 // APPROVALS
@@ -329,6 +316,20 @@ contract('ValidToken', function (accounts) {
             assert.strictEqual(result.logs[0].args._value.toString(), '2666')
         }).catch((err) => {
             throw new Error(err)
+        })
+    })
+
+    it('events: should generate an event on zero-transfers', function () {
+        return ValidToken.deployed().then(function (instance) {
+            return utils.testMint(contract, accounts, 10000, 0, 0);
+        }).then(function (result) {
+            return contract.transfer(accounts[1], '0', {from: accounts[0]})
+        }).then(function (result) {
+            assert.strictEqual(result.logs[0].args._from, accounts[0])
+            assert.strictEqual(result.logs[0].args._to, accounts[1])
+            assert.strictEqual(result.logs[0].args._value.toString(), '0')
+        }).catch((err) => {
+            throw new Error(err);
         })
     })
 
