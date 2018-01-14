@@ -16,11 +16,32 @@ contract ERC20 {
 
 
 /**
+ * @title ERC677 transferAndCall token interface
+ * @dev See https://github.com/ethereum/EIPs/issues/677 for specification and
+ *      discussion.
+ */
+contract ERC677 {
+    event Transfer(address indexed _from, address indexed _to, uint256 _value, bytes _data);
+
+    function transferAndCall(address _to, uint _value, bytes _data) public returns (bool success);
+}
+
+/**
+ * @title Receiver interface for ERC677 transferAndCall
+ * @dev See https://github.com/ethereum/EIPs/issues/677 for specification and
+ *      discussion.
+ */
+contract ERC677Receiver {
+    function tokenFallback(address _from, uint _value, bytes _data) public;
+}
+
+
+/**
  * @title VALID Token
  * @dev ERC20 compatible smart contract for the VALID token. Closely follows
  *      ConsenSys StandardToken.
  */
-contract ValidToken is ERC20 {
+contract ValidToken is ERC677, ERC20 {
     // token metadata
     string public constant name = "VALID";
     string public constant symbol = "VLD";
@@ -134,5 +155,28 @@ contract ValidToken is ERC20 {
 
     function allowance(address _owner, address _spender) public view returns (uint256) {
         return allowed[_owner][_spender];
+    }
+
+    // ERC677 functionality
+
+    function transferAndCall(address _to, uint _value, bytes _data) public mintingFinished returns (bool) {
+        require(transfer(_to, _value));
+
+        Transfer(msg.sender, _to, _value, _data);
+
+        // call receiver
+        if (isContract(_to)) {
+            ERC677Receiver receiver = ERC677Receiver(_to);
+            receiver.tokenFallback(msg.sender, _value, _data);
+        }
+        return true;
+    }
+
+    function isContract(address _addr) private view returns (bool) {
+        uint len;
+        assembly {
+            len := extcodesize(_addr)
+        }
+        return len > 0;
     }
 }
