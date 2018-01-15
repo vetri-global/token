@@ -1,6 +1,6 @@
-# VALID Token Contract
+# VALID Token Smart Contract
 
-![VALID Logo](https://valid.global/static/img/vld-icon.png)
+![VALID Logo](https://static.valid.global/github-banner.png)
 
 This repository contains the smart contract for the VALID token. See
 [valid.global](https://valid.global) for the whitepaper and more details.
