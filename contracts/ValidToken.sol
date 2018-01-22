@@ -70,6 +70,10 @@ contract ValidToken is ERC677, ERC20 {
         require(mintingDone == true);
         _;
     }
+    modifier mintingInProgress() {
+        require(mintingDone == false);
+        _;
+    }
 
     // constructor
     function ValidToken() public {
@@ -86,9 +90,7 @@ contract ValidToken is ERC677, ERC20 {
 
     // minting functionality
 
-    function mint(address[] _recipients, uint256[] _amounts) public onlyOwner {
-        require(mintingDone == false);
-
+    function mint(address[] _recipients, uint256[] _amounts) public mintingInProgress onlyOwner {
         require(_recipients.length == _amounts.length);
         require(_recipients.length < 255);
 
@@ -107,9 +109,7 @@ contract ValidToken is ERC677, ERC20 {
         }
     }
 
-    function finishMinting() public onlyOwner {
-        require(mintingDone == false);
-
+    function finishMinting() public mintingInProgress onlyOwner {
         // check hard cap again
         require(totalSupply <= maxSupply);
 
