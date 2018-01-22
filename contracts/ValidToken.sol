@@ -135,7 +135,8 @@ contract ValidToken is ERC677, ERC20 {
 
     function transferFrom(address _from, address _to, uint256 _value) public mintingFinished returns (bool) {
         uint256 allowance = allowed[_from][msg.sender];
-        require(balances[_from] >= _value && allowance >= _value);
+        require(balances[_from] >= _value);
+        require(allowance >= _value);
         assert(balances[_to] + _value >= balances[_to]); // receiver balance overflow check
 
         allowed[_from][msg.sender] -= _value;
