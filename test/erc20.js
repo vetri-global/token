@@ -1,15 +1,7 @@
 //based on https://github.com/ConsenSys/Tokens/tree/master/test
 
 var ValidToken = artifacts.require('./ValidToken.sol')
-var utils = {
-    testMint(contract, accounts, account0, account1, account2) {
-        return contract.mint([accounts[0]], [account0])
-            .then(function () {
-                return contract.finishMinting()
-            }).catch((err) => {
-            throw new Error(err) });
-    }
-}
+var utils = require('./support/minting.js')
 
 
 contract('ValidToken', function (accounts) {
