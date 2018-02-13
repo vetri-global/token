@@ -6,13 +6,14 @@ pragma solidity ^0.4.18;
  */
 contract ERC20 {
     uint256 public totalSupply;
-    function transfer(address _to, uint _value) public returns (bool success);
-    function transferFrom(address _from, address _to, uint _value) public returns (bool success);
-    function approve(address _spender, uint _value) public returns (bool success);
-    function allowance(address _owner, address _spender) public view returns (uint remaining);
+    function balanceOf(address _owner) public view returns (uint256 balance);
+    function transfer(address _to, uint256 _value) public returns (bool success);
+    function transferFrom(address _from, address _to, uint256 _value) public returns (bool success);
+    function approve(address _spender, uint256 _value) public returns (bool success);
+    function allowance(address _owner, address _spender) public view returns (uint256 remaining);
 
-    event Transfer(address indexed _from, address indexed _to, uint _value);
-    event Approval(address indexed _owner, address indexed _spender, uint _value);
+    event Transfer(address indexed _from, address indexed _to, uint256 _value);
+    event Approval(address indexed _owner, address indexed _spender, uint256 _value);
 }
 
 
@@ -49,12 +50,12 @@ contract ValidToken is ERC677, ERC20 {
     uint8 public constant decimals = 18;
 
     // total supply and maximum amount of tokens
-    uint256 constant maxSupply = 10**9 * 10**uint256(decimals);
+    uint256 public constant maxSupply = 10**9 * 10**uint256(decimals);
     // note: this equals 10**27, which is smaller than uint256 max value (~10**77)
 
     // token accounting
     mapping(address => uint256) balances;
-    mapping(address => mapping(address => uint256)) allowed;
+    mapping(address => mapping(address => uint256)) internal allowed;
 
     // ownership
     address public owner;
@@ -67,6 +68,10 @@ contract ValidToken is ERC677, ERC20 {
     bool public mintingDone = false;
     modifier mintingFinished() {
         require(mintingDone == true);
+        _;
+    }
+    modifier mintingInProgress() {
+        require(mintingDone == false);
         _;
     }
 
@@ -85,9 +90,7 @@ contract ValidToken is ERC677, ERC20 {
 
     // minting functionality
 
-    function mint(address[] _recipients, uint256[] _amounts) public onlyOwner {
-        require(mintingDone == false);
-
+    function mint(address[] _recipients, uint256[] _amounts) public mintingInProgress onlyOwner {
         require(_recipients.length == _amounts.length);
         require(_recipients.length < 255);
 
@@ -106,11 +109,9 @@ contract ValidToken is ERC677, ERC20 {
         }
     }
 
-    function finishMinting() public onlyOwner {
-        require(mintingDone == false);
-
+    function finishMinting() public mintingInProgress onlyOwner {
         // check hard cap again
-        require(totalSupply <= maxSupply);
+        assert(totalSupply <= maxSupply);
 
         mintingDone = true;
     }
@@ -123,7 +124,7 @@ contract ValidToken is ERC677, ERC20 {
 
     function transfer(address _to, uint256 _value) public mintingFinished returns (bool) {
         require(balances[msg.sender] >= _value);
-        require(balances[_to] + _value >= balances[_to]); // receiver balance overflow check
+        assert(balances[_to] + _value >= balances[_to]); // receiver balance overflow check
 
         balances[msg.sender] -= _value;
         balances[_to] += _value;
@@ -134,8 +135,9 @@ contract ValidToken is ERC677, ERC20 {
 
     function transferFrom(address _from, address _to, uint256 _value) public mintingFinished returns (bool) {
         uint256 allowance = allowed[_from][msg.sender];
-        require(balances[_from] >= _value && allowance >= _value);
-        require(balances[_to] + _value >= balances[_to]); // receiver balance overflow check
+        require(balances[_from] >= _value);
+        require(allowance >= _value);
+        assert(balances[_to] + _value >= balances[_to]); // receiver balance overflow check
 
         allowed[_from][msg.sender] -= _value;
         balances[_from] -= _value;
