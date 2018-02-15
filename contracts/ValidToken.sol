@@ -123,6 +123,11 @@ contract ValidToken is ERC677, ERC20 {
     }
 
     function transfer(address _to, uint256 _value) public mintingFinished returns (bool) {
+        // prevent some common errors
+        require(_to != address(0x0));
+        require(_to != address(this));
+
+        // check balance
         require(balances[msg.sender] >= _value);
         assert(balances[_to] + _value >= balances[_to]); // receiver balance overflow check
 
@@ -134,6 +139,11 @@ contract ValidToken is ERC677, ERC20 {
     }
 
     function transferFrom(address _from, address _to, uint256 _value) public mintingFinished returns (bool) {
+        // prevent some common errors
+        require(_to != address(0x0));
+        require(_to != address(this));
+
+        // check balance and allowance
         uint256 allowance = allowed[_from][msg.sender];
         require(balances[_from] >= _value);
         require(allowance >= _value);
