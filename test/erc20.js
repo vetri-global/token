@@ -53,15 +53,15 @@ contract('ValidToken', function (accounts) {
             return contract.transfer(accounts[0], 1000, {from: accounts[0]});
         }).then(function (retVal) {
             //transfer was successful
-            return contract.balanceOf.call(accounts[0], {from: accounts[0]});
+            return contract.balanceOf(accounts[0], {from: accounts[0]});
         }).then(function (balance) {
             assert.equal(balance.valueOf(), 1000, "we sent from account 0 to account 0, so account 0 has 1000 tokens");
             return contract.transfer(accounts[1], 1000, {from: accounts[0]});
         }).then(function (retVal) {
-            return contract.balanceOf.call(accounts[0], {from: accounts[1]});
+            return contract.balanceOf(accounts[0], {from: accounts[1]});
         }).then(function (balance) {
             assert.equal(balance.valueOf(), 0, "we transfer all tokens to account 1");
-            return contract.balanceOf.call(accounts[1], {from: accounts[2]});
+            return contract.balanceOf(accounts[1], {from: accounts[2]});
         }).then(function (balance) {
             assert.equal(balance.valueOf(), 1000, "account 1 has 1000 tokenscd ");
         }).catch((err) => {
@@ -74,7 +74,7 @@ contract('ValidToken', function (accounts) {
 
     it('creation: should create an initial balance of 0 for everyone', function () {
         ValidToken.new({from: accounts[0]}).then(function (ctr) {
-            return ctr.balanceOf.call(accounts[0])
+            return ctr.balanceOf(accounts[0])
         }).then(function (result) {
             assert.strictEqual(result.toNumber(), 0)
         }).catch((err) => {
@@ -106,7 +106,7 @@ contract('ValidToken', function (accounts) {
         }).then(function (result) {
             return contract.transfer(accounts[1], 10000, {from: accounts[0]})
         }).then(function (result) {
-            return contract.balanceOf.call(accounts[1])
+            return contract.balanceOf(accounts[1])
         }).then(function (result) {
             assert.strictEqual(result.toNumber(), 10000)
         }).catch((err) => {
@@ -118,7 +118,7 @@ contract('ValidToken', function (accounts) {
         return ValidToken.deployed().then(function (instance) {
             return utils.testMint(contract, accounts, 10000, 0, 0);
         }).then(function (result) {
-            return contract.transfer.call(accounts[1], 10001, {from: accounts[0]})
+            return contract.transfer(accounts[1], 10001, {from: accounts[0]})
         }).then(function (result) {
             assert(false, 'The preceding call should have thrown an error.')
         }).catch((err) => {
@@ -131,7 +131,7 @@ contract('ValidToken', function (accounts) {
         return ValidToken.deployed().then(function (instance) {
             return utils.testMint(contract, accounts, 10000, 0, 0);
         }).then(function (result) {
-            return contract.transfer.call(contract.address, 5000, {from: accounts[0]})
+            return contract.transfer(contract.address, 5000, {from: accounts[0]})
         }).then(function (result) {
             assert(false, 'The preceding call should have thrown an error.')
         }).catch((err) => {
@@ -144,7 +144,7 @@ contract('ValidToken', function (accounts) {
         return ValidToken.deployed().then(function (instance) {
             return utils.testMint(contract, accounts, 10000, 0, 0);
         }).then(function (result) {
-            return contract.transfer.call(0x0, 5000, {from: accounts[0]})
+            return contract.transfer(0x0, 5000, {from: accounts[0]})
         }).then(function (result) {
             assert(false, 'The preceding call should have thrown an error.')
         }).catch((err) => {
@@ -163,7 +163,7 @@ contract('ValidToken', function (accounts) {
         }).then(function (result) {
             return contract.approve(accounts[1], 100, {from: accounts[0]})
         }).then(function (result) {
-            return contract.allowance.call(accounts[0], accounts[1])
+            return contract.allowance(accounts[0], accounts[1])
         }).then(function (result) {
             assert.strictEqual(result.toNumber(), 100)
         }).catch((err) => {
@@ -171,33 +171,32 @@ contract('ValidToken', function (accounts) {
         })
     })
 
-    // bit overkill. But is for testing a bug
     it('approvals: msg.sender approves accounts[1] of 100 & withdraws 20 once.', function () {
         return ValidToken.deployed().then(function (instance) {
             return utils.testMint(contract, accounts, 10000, 0, 0);
         }).then(function (result) {
-            return contract.balanceOf.call(accounts[0])
+            return contract.balanceOf(accounts[0])
         }).then(function (result) {
             assert.strictEqual(result.toNumber(), 10000)
             return contract.approve(accounts[1], 100, {from: accounts[0]})
         }).then(function (result) {
-            return contract.balanceOf.call(accounts[2])
+            return contract.balanceOf(accounts[2])
         }).then(function (result) {
             assert.strictEqual(result.toNumber(), 0)
-            return contract.allowance.call(accounts[0], accounts[1])
+            return contract.allowance(accounts[0], accounts[1])
         }).then(function (result) {
             assert.strictEqual(result.toNumber(), 100)
-            return contract.transferFrom.call(accounts[0], accounts[2], 20, {from: accounts[1]})
+            return contract.transferFrom(accounts[0], accounts[2], 20, {from: accounts[1]})
         }).then(function (result) {
             return contract.transferFrom(accounts[0], accounts[2], 20, {from: accounts[1]})
         }).then(function (result) {
             return contract.allowance.call(accounts[0], accounts[1])
         }).then(function (result) {
             assert.strictEqual(result.toNumber(), 80)
-            return contract.balanceOf.call(accounts[2])
+            return contract.balanceOf(accounts[2])
         }).then(function (result) {
             assert.strictEqual(result.toNumber(), 20)
-            return contract.balanceOf.call(accounts[0])
+            return contract.balanceOf(accounts[0])
         }).then(function (result) {
             assert.strictEqual(result.toNumber(), 9980)
         }).catch((err) => {
@@ -212,31 +211,31 @@ contract('ValidToken', function (accounts) {
         }).then(function (result) {
             return contract.approve(accounts[1], 100, {from: accounts[0]})
         }).then(function (result) {
-            return contract.allowance.call(accounts[0], accounts[1])
+            return contract.allowance(accounts[0], accounts[1])
         }).then(function (result) {
             assert.strictEqual(result.toNumber(), 100)
             return contract.transferFrom(accounts[0], accounts[2], 20, {from: accounts[1]})
         }).then(function (result) {
-            return contract.allowance.call(accounts[0], accounts[1])
+            return contract.allowance(accounts[0], accounts[1])
         }).then(function (result) {
             assert.strictEqual(result.toNumber(), 80)
-            return contract.balanceOf.call(accounts[2])
+            return contract.balanceOf(accounts[2])
         }).then(function (result) {
             assert.strictEqual(result.toNumber(), 20)
-            return contract.balanceOf.call(accounts[0])
+            return contract.balanceOf(accounts[0])
         }).then(function (result) {
             assert.strictEqual(result.toNumber(), 9980)
             // FIRST tx done.
             // onto next.
             return contract.transferFrom(accounts[0], accounts[2], 20, {from: accounts[1]})
         }).then(function (result) {
-            return contract.allowance.call(accounts[0], accounts[1])
+            return contract.allowance(accounts[0], accounts[1])
         }).then(function (result) {
             assert.strictEqual(result.toNumber(), 60)
-            return contract.balanceOf.call(accounts[2])
+            return contract.balanceOf(accounts[2])
         }).then(function (result) {
             assert.strictEqual(result.toNumber(), 40)
-            return contract.balanceOf.call(accounts[0])
+            return contract.balanceOf(accounts[0])
         }).then(function (result) {
             assert.strictEqual(result.toNumber(), 9960)
         }).catch((err) => {
@@ -251,23 +250,23 @@ contract('ValidToken', function (accounts) {
         }).then(function (result) {
             return contract.approve(accounts[1], 100, {from: accounts[0]})
         }).then(function (result) {
-            return contract.allowance.call(accounts[0], accounts[1])
+            return contract.allowance(accounts[0], accounts[1])
         }).then(function (result) {
             assert.strictEqual(result.toNumber(), 100)
             return contract.transferFrom(accounts[0], accounts[2], 50, {from: accounts[1]})
         }).then(function (result) {
-            return contract.allowance.call(accounts[0], accounts[1])
+            return contract.allowance(accounts[0], accounts[1])
         }).then(function (result) {
             assert.strictEqual(result.toNumber(), 50)
-            return contract.balanceOf.call(accounts[2])
+            return contract.balanceOf(accounts[2])
         }).then(function (result) {
             assert.strictEqual(result.toNumber(), 50)
-            return contract.balanceOf.call(accounts[0])
+            return contract.balanceOf(accounts[0])
         }).then(function (result) {
             assert.strictEqual(result.toNumber(), 9950)
             // FIRST tx done.
             // onto next.
-            return contract.transferFrom.call(accounts[0], accounts[2], 60, {from: accounts[1]})
+            return contract.transferFrom(accounts[0], accounts[2], 60, {from: accounts[1]})
         }).then(function (result) {
             assert(false, 'The preceding call should have thrown an error.')
         }).catch((err) => {
@@ -280,7 +279,7 @@ contract('ValidToken', function (accounts) {
         return ValidToken.deployed().then(function (instance) {
             return utils.testMint(contract, accounts, 10000, 0, 0);
         }).then(function (result) {
-            return contract.transferFrom.call(accounts[0], accounts[2], 60, {from: accounts[1]})
+            return contract.transferFrom(accounts[0], accounts[2], 60, {from: accounts[1]})
         }).then(function (result) {
             assert(false, 'The preceding call should have thrown an error.')
         }).catch((err) => {
@@ -299,7 +298,7 @@ contract('ValidToken', function (accounts) {
         }).then(function (result) {
             return contract.approve(accounts[1], 0, {from: accounts[0]})
         }).then(function (result) {
-            return contract.transferFrom.call(accounts[0], accounts[2], 10, {from: accounts[1]})
+            return contract.transferFrom(accounts[0], accounts[2], 10, {from: accounts[1]})
         }).then(function (result) {
             assert(false, 'The preceding call should have thrown an error.')
         }).catch((err) => {
