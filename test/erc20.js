@@ -127,6 +127,32 @@ contract('ValidToken', function (accounts) {
         })
     })
 
+    it('transfers: should fail when trying to transfer to contract address', function () {
+        return ValidToken.deployed().then(function (instance) {
+            return utils.testMint(contract, accounts, 10000, 0, 0);
+        }).then(function (result) {
+            return contract.transfer.call(contract.address, 5000, {from: accounts[0]})
+        }).then(function (result) {
+            assert(false, 'The preceding call should have thrown an error.')
+        }).catch((err) => {
+            assert(evmThrewRevertError(err), 'the EVM did not throw an error or did not ' +
+                'throw the expected error')
+        })
+    })
+
+    it('transfers: should fail when trying to transfer to 0x0', function () {
+        return ValidToken.deployed().then(function (instance) {
+            return utils.testMint(contract, accounts, 10000, 0, 0);
+        }).then(function (result) {
+            return contract.transfer.call(0x0, 5000, {from: accounts[0]})
+        }).then(function (result) {
+            assert(false, 'The preceding call should have thrown an error.')
+        }).catch((err) => {
+            assert(evmThrewRevertError(err), 'the EVM did not throw an error or did not ' +
+                'throw the expected error')
+        })
+    })
+
     // NOTE: testing uint256 wrapping is impossible in this standard token since you can't supply > 2^256 -1.
 
 // APPROVALS
