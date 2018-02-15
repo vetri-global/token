@@ -105,7 +105,7 @@ contract ValidToken is ERC677, ERC20 {
             balances[recipient] += amount;
             totalSupply += amount;
 
-            Transfer(msg.sender, recipient, amount);
+            Transfer(0, recipient, amount);
         }
     }
 
