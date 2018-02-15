@@ -188,14 +188,15 @@ contract('ValidToken', function (accounts) {
             assert.strictEqual(result.toNumber(), 100)
             return contract.transferFrom(accounts[0], accounts[2], 20, {from: accounts[1]})
         }).then(function (result) {
-            return contract.transferFrom(accounts[0], accounts[2], 20, {from: accounts[1]})
-        }).then(function (result) {
-            return contract.allowance.call(accounts[0], accounts[1])
+            return contract.allowance(accounts[0], accounts[1])
         }).then(function (result) {
             assert.strictEqual(result.toNumber(), 80)
             return contract.balanceOf(accounts[2])
         }).then(function (result) {
             assert.strictEqual(result.toNumber(), 20)
+            return contract.balanceOf(accounts[1])
+        }).then(function (result) {
+            assert.strictEqual(result.toNumber(), 0)
             return contract.balanceOf(accounts[0])
         }).then(function (result) {
             assert.strictEqual(result.toNumber(), 9980)
