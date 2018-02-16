@@ -323,6 +323,36 @@ contract('ValidToken', function (accounts) {
         })
     })
 
+    it('approve: should fail when trying to transfer to contract address', function () {
+        return ValidToken.deployed().then(function (instance) {
+            return utils.testMint(contract, accounts, 10000, 0, 0);
+        }).then(function (result) {
+            return contract.approve(accounts[1], 100, {from: accounts[0]})
+        }).then(function (result) {
+            return contract.transferFrom(accounts[0], contract.address, 100, {from: accounts[1]})
+        }).then(function (result) {
+            assert(false, 'The preceding call should have thrown an error.')
+        }).catch((err) => {
+            assert(evmThrewRevertError(err), 'the EVM did not throw an error or did not ' +
+                'throw the expected error')
+        })
+    })
+
+    it('approve: should fail when trying to transfer to 0x0', function () {
+        return ValidToken.deployed().then(function (instance) {
+            return utils.testMint(contract, accounts, 10000, 0, 0);
+        }).then(function (result) {
+            return contract.approve(accounts[1], 100, {from: accounts[0]})
+        }).then(function (result) {
+            return contract.transferFrom(accounts[0], 0x0, 100, {from: accounts[1]})
+        }).then(function (result) {
+            assert(false, 'The preceding call should have thrown an error.')
+        }).catch((err) => {
+            assert(evmThrewRevertError(err), 'the EVM did not throw an error or did not ' +
+                'throw the expected error')
+        })
+    })
+
     it('events: should fire Transfer event properly', function () {
         return ValidToken.deployed().then(function (instance) {
             return utils.testMint(contract, accounts, 10000, 0, 0);
