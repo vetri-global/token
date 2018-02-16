@@ -353,6 +353,22 @@ contract('ValidToken', function (accounts) {
         })
     })
 
+// EVENTS
+
+    it('events: minting should fire Transfer event properly', function () {
+        return ValidToken.deployed().then(function (instance) {
+            return contract.mint([accounts[0]], [1000])
+        }).then(function (result) {
+            let evt = result.logs[0].args
+            assert.strictEqual(result.logs[0].event, 'Transfer')
+            assert.strictEqual(evt._from, '0x0000000000000000000000000000000000000000')
+            assert.strictEqual(evt._to, accounts[0])
+            assert.strictEqual(evt._value.toString(), '1000')
+        }).catch((err) => {
+            throw new Error(err)
+        })
+    })
+
     it('events: should fire Transfer event properly', function () {
         return ValidToken.deployed().then(function (instance) {
             return utils.testMint(contract, accounts, 10000, 0, 0);
