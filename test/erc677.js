@@ -87,6 +87,27 @@ contract('ValidToken', (accounts) => {
             });
         });
 
+        it("should throw on insufficient funds", async () => {
+            let data = functionID("transferAndCall(address,uint256,bytes)") +
+                encodeAddress(receiver.address) +
+                encodeUint256(1000000 + 1) +
+                encodeUint256(96) +
+                encodeBytes("deadbeef");
+            params = {
+                from: sender,
+                to: token.address,
+                data: data,
+                gas: 1000000
+            }
+
+            await assertActionThrows(async () => {
+                await sendTransaction(params);
+            });
+
+            let balance = await token.balanceOf(receiver.address);
+            assert.equal(balance, 0);
+        });
+
         context("when sending to a contract that is not ERC677 compatible", () => {
             let nonERC677;
 
