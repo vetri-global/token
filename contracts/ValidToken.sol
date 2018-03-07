@@ -57,6 +57,10 @@ contract ValidToken is ERC677, ERC20 {
     mapping(address => uint256) balances;
     mapping(address => mapping(address => uint256)) internal allowed;
 
+    // token lockups
+    mapping(address => uint256) lockups;
+    event TokensLocked(address indexed _holder, uint256 _timeout);
+
     // ownership
     address public owner;
     modifier onlyOwner() {
@@ -109,6 +113,22 @@ contract ValidToken is ERC677, ERC20 {
         }
     }
 
+    function lockTokens(address[] _holders, uint256[] _timeouts) public mintingInProgress onlyOwner {
+        require(_holders.length == _timeouts.length);
+        require(_holders.length < 255);
+
+        for (uint8 i = 0; i < _holders.length; i++) {
+            address holder = _holders[i];
+            uint256 timeout = _timeouts[i];
+
+            // make sure lockup period can not be overwritten
+            require(lockups[holder] == 0);
+
+            lockups[holder] = timeout;
+            TokensLocked(holder, timeout);
+        }
+    }
+
     function finishMinting() public mintingInProgress onlyOwner {
         // check hard cap again
         assert(totalSupply <= maxSupply);
@@ -127,6 +147,11 @@ contract ValidToken is ERC677, ERC20 {
         require(_to != address(0x0));
         require(_to != address(this));
 
+        // check lockups
+        if (lockups[msg.sender] != 0) {
+            require(now >= lockups[msg.sender]);
+        }
+
         // check balance
         require(balances[msg.sender] >= _value);
         assert(balances[_to] + _value >= balances[_to]); // receiver balance overflow check
@@ -142,6 +167,11 @@ contract ValidToken is ERC677, ERC20 {
         // prevent some common errors
         require(_to != address(0x0));
         require(_to != address(this));
+
+        // check lockups
+        if (lockups[msg.sender] != 0) {
+            require(now >= lockups[msg.sender]);
+        }
 
         // check balance and allowance
         uint256 allowance = allowed[_from][msg.sender];
