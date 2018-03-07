@@ -1,18 +1,16 @@
-//based on https://github.com/ConsenSys/Tokens/tree/master/test
-
 var ValidToken = artifacts.require('./ValidToken.sol')
 var utils = require('./support/minting.js')
 
 
-contract('ValidToken', function (accounts) {
-    //https://ethereum.stackexchange.com/questions/15567/truffle-smart-contract-testing-does-not-reset-state/15574#15574
-    var contract;
+contract('ValidToken', (accounts) => {
+    // redeploy token contract before each test
+    var contract
     beforeEach(function () {
         return ValidToken.new()
             .then(function (instance) {
                 contract = instance;
             });
-    });
+    })
 
     const evmThrewRevertError = (err) => {
         if (err.toString().includes('Error: VM Exception while processing transaction: revert')) {
@@ -25,7 +23,52 @@ contract('ValidToken', function (accounts) {
     }
 
 
-    describe("Basic Functionality", () => {
+    // time manipulation helpers
+
+    const getBlockTime = () => {
+        return web3.eth.getBlock(web3.eth.blockNumber).timestamp
+    }
+
+    const increaseTime = (seconds) => {
+        return new Promise((resolve, reject) => {
+          web3.currentProvider.sendAsync({
+            jsonrpc: '2.0',
+            method: 'evm_increaseTime',
+            params: [seconds],
+            id: new Date().getTime(),
+          }, (err, result) => {
+            if (err) {
+              return reject(err)
+            }
+
+            web3.currentProvider.sendAsync({
+              jsonrpc: '2.0',
+              method: 'evm_mine',
+              id: new Date().getTime(),
+            }, (err, result) => {
+              if (err) {
+                return reject(err)
+              }
+
+              resolve()
+            })
+          })
+        })
+    }
+
+    const advanceTimeTo = async (time) => {
+        let difference = time - getBlockTime()
+
+        if (difference > 0) {
+          await increaseTime(difference)
+          return true
+        }
+
+        return false
+    }
+
+
+    describe("ERC20 Basic Functionality", () => {
         it("test ERC20 basic functionality", function () {
             return ValidToken.deployed().then(function (instance) {
                 return utils.testMint(contract, accounts, 1000, 0, 0);
@@ -450,4 +493,68 @@ contract('ValidToken', function (accounts) {
             })
         })
     })
+
+
+    describe("Lockups", () => {
+        let startTime
+
+        beforeEach(async () => {
+            await contract.mint(
+              [accounts[0], accounts[1], accounts[2]],
+              [1000, 100, 10]
+            )
+
+            startTime = getBlockTime()
+            await contract.lockTokens(
+              [accounts[0], accounts[1], accounts[2]],
+              [startTime+1000, startTime+2000, startTime+3000]
+            )
+
+            await contract.finishMinting()
+        })
+
+        it('should not be able to withdraw funds before lockup is over', async () => {
+            await assertActionThrows(async () => {
+              await contract.transfer(accounts[3], 1, { from: accounts[0] })
+            })
+
+            // increase time to just before lockup expires
+            assert.equal(await advanceTimeTo(startTime + 999), true)
+            await assertActionThrows(async () => {
+              await contract.transfer(accounts[3], 1, { from: accounts[0] })
+            })
+
+            // also check a second account
+            await assertActionThrows(async () => {
+              await contract.transfer(accounts[3], 1, { from: accounts[1] })
+            })
+        })
+
+        it('should be able to withdraw funds after lockup expires', async () => {
+            // increase time to end of accounts[0] lockup (1, 2 should still be locked)
+            assert.equal(true, await advanceTimeTo(startTime + 1000))
+
+            // check transfers from all accounts with lockups
+            await contract.transfer(accounts[3], 1, { from: accounts[0] })
+            await assertActionThrows(async () => {
+              await contract.transfer(accounts[3], 1, { from: accounts[1] })
+            })
+            await assertActionThrows(async () => {
+              await contract.transfer(accounts[3], 1, { from: accounts[2] })
+            })
+
+            // increase time to end of all lockups
+            assert.equal(true, await advanceTimeTo(startTime + 3000))
+
+            // check transfers from all accounts with lockups again
+            let transfers = [
+              await contract.transfer(accounts[3], 1, { from: accounts[0] }),
+              await contract.transfer(accounts[3], 1, { from: accounts[1] }),
+              await contract.transfer(accounts[3], 1, { from: accounts[2] }),
+            ]
+        })
+
+        // accounts without lockups should be covered by regular ERC20 tests
+    })
+
 })

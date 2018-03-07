@@ -22,7 +22,7 @@ contract('ValidToken', (accounts) => {
         assert.equal(await receiver.sentValue(), 0);
     });
 
-    describe("transferAndCall(address, uint, bytes)", () => {
+    describe("ERC677 transferAndCall", () => {
         let params;
 
         beforeEach(() => {
