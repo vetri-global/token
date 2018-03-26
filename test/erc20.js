@@ -530,6 +530,19 @@ contract('ValidToken', (accounts) => {
             })
         })
 
+        it('should not be able to withdraw funds before lockup is over with transferFrom', async () => {
+            await contract.approve(accounts[3], 1000, { from: accounts[0] });
+            await assertActionThrows(async () => {
+                await contract.transferFrom(accounts[0], accounts[3], 1000, { from: accounts[3] })
+            })
+
+            // increase time to just before lockup expires
+            assert.equal(await advanceTimeTo(startTime + 999), true)
+            await assertActionThrows(async () => {
+                await contract.transferFrom(accounts[0], accounts[3], 1000, { from: accounts[3] })
+            })
+        })
+
         it('should be able to withdraw funds after lockup expires', async () => {
             // increase time to end of accounts[0] lockup (1, 2 should still be locked)
             assert.equal(true, await advanceTimeTo(startTime + 1000))
@@ -552,6 +565,18 @@ contract('ValidToken', (accounts) => {
               await contract.transfer(accounts[3], 1, { from: accounts[1] }),
               await contract.transfer(accounts[3], 1, { from: accounts[2] }),
             ]
+        })
+
+        it('should be able to withdraw funds after lockup is over with transferFrom', async () => {
+            await contract.approve(accounts[3], 1000, { from: accounts[0] });
+            await assertActionThrows(async () => {
+                await contract.transferFrom(accounts[0], accounts[3], 1000, { from: accounts[3] })
+            })
+
+            // increase time to end of accounts[0] lockup
+            assert.equal(await advanceTimeTo(startTime + 1000), true)
+            // withdraw tokens
+            await contract.transferFrom(accounts[0], accounts[3], 1000, { from: accounts[3] })
         })
 
         // accounts without lockups should be covered by regular ERC20 tests

@@ -169,8 +169,8 @@ contract ValidToken is ERC677, ERC20 {
         require(_to != address(this));
 
         // check lockups
-        if (lockups[msg.sender] != 0) {
-            require(now >= lockups[msg.sender]);
+        if (lockups[_from] != 0) {
+            require(now >= lockups[_from]);
         }
 
         // check balance and allowance
